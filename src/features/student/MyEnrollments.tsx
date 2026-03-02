@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Clock, AlertCircle, ExternalLink, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
+import { formatDateTime } from "@/lib/dateUtils";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -159,10 +161,10 @@ export function MyEnrollments({ enrollments, studentName, selectedCourse }: { en
                                                         <TableCell>
                                                             <div className="flex flex-col text-sm">
                                                                 <div className="text-muted-foreground">
-                                                                    Desde: {format(start, "dd/MM/yy HH:mm")}
+                                                                    Desde: {formatDateTime(start, "dd/MM/yy HH:mm")}
                                                                 </div>
                                                                 <div className="text-muted-foreground">
-                                                                    Hasta: {format(end, "dd/MM/yy HH:mm")}
+                                                                    Hasta: {formatDateTime(end, "dd/MM/yy HH:mm")}
                                                                 </div>
                                                             </div>
                                                         </TableCell>

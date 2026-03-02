@@ -47,11 +47,11 @@ export function formatCalendarDate(date: Date | string, formatStr: string = "PPP
     const d = typeof date === 'string' ? new Date(date) : date;
     // Si la fecha es válida, extraemos componentes UTC y creamos una fecha local "falsa" para formatear
     if (isNaN(d.getTime())) return "Fecha inválida";
-    
+
     // Creamos fecha local con los datos UTC para que 'format' saque los nombres correctos
-    const visualDate = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0); 
+    const visualDate = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0);
     // Ponemos hora 12:00 para evitar bordes raros de DST, aunque con componentes manuales es seguro.
-    
+
     return format(visualDate, formatStr, { locale: es });
 }
 
@@ -63,4 +63,20 @@ export function parseISOAsUTC(dateString: string): Date {
     // new Date("YYYY-MM-DD") en ISO estándar devuelve UTC 00:00
     // Aseguramos que sea tratado así.
     return new Date(dateString);
+}
+
+/**
+ * Formatea una fecha+hora para visualización, respetando la zona horaria del entorno (navegador o servidor).
+ * Úsalo para mostrar fechas de inicio/fin de evaluaciones, timestamps de envío, etc.
+ * En el cliente usará la zona horaria del navegador del usuario.
+ * 
+ * @param date Fecha a formatear (Date o string ISO)
+ * @param formatStr String de formato date-fns (default: "dd/MM/yyyy HH:mm")
+ * @returns Fecha formateada en la zona horaria local del usuario
+ */
+export function formatDateTime(date: Date | string, formatStr: string = "dd/MM/yyyy HH:mm"): string {
+    if (!date) return "";
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "Fecha inválida";
+    return format(d, formatStr, { locale: es });
 }

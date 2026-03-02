@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import { formatDateTime } from "@/lib/dateUtils";
 import { Plus, Trash2, CalendarClock, Link as LinkIcon, FileText, Users, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -33,6 +34,22 @@ import {
 } from "@/components/ui/select";
 import { assignEvaluationAction, unassignEvaluationAction, updateEvaluationAssignmentAction } from "@/app/actions";
 
+/**
+ * Converts a datetime-local string (e.g. "2026-03-02T10:00") to an ISO string
+ * that accounts for the user's browser timezone offset.
+ * This ensures the server stores the exact UTC moment the user intended.
+ */
+function localDatetimeToISO(dtLocalStr: string): string {
+    // Parse the local datetime string components
+    const [datePart, timePart] = dtLocalStr.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute] = timePart.split(':').map(Number);
+    // Create a Date object in local time
+    const localDate = new Date(year, month - 1, day, hour, minute, 0, 0);
+    // Return as ISO (UTC) string - this correctly accounts for the browser timezone
+    return localDate.toISOString();
+}
+
 export function EvaluationAssignmentManager({
     courseId,
     attempts,
@@ -44,8 +61,27 @@ export function EvaluationAssignmentManager({
 }) {
     const [isAssigning, setIsAssigning] = useState(false);
     const [selectedEvaluation, setSelectedEvaluation] = useState("");
-
     const [editingAttempt, setEditingAttempt] = useState<any>(null);
+
+    const handleAssign = async (formData: FormData) => {
+        const startTimeRaw = formData.get("startTime") as string;
+        const endTimeRaw = formData.get("endTime") as string;
+        if (startTimeRaw) formData.set("startTime", localDatetimeToISO(startTimeRaw));
+        if (endTimeRaw) formData.set("endTime", localDatetimeToISO(endTimeRaw));
+        await assignEvaluationAction(formData);
+        setIsAssigning(false);
+        setSelectedEvaluation("");
+    };
+
+    const handleUpdate = async (formData: FormData) => {
+        const startTimeRaw = formData.get("startTime") as string;
+        const endTimeRaw = formData.get("endTime") as string;
+        if (startTimeRaw) formData.set("startTime", localDatetimeToISO(startTimeRaw));
+        if (endTimeRaw) formData.set("endTime", localDatetimeToISO(endTimeRaw));
+        await updateEvaluationAssignmentAction(formData);
+        setEditingAttempt(null);
+    };
+
 
     return (
         <div className="space-y-4">
@@ -64,13 +100,7 @@ export function EvaluationAssignmentManager({
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
-                        <form
-                            action={async (formData) => {
-                                await assignEvaluationAction(formData);
-                                setIsAssigning(false);
-                                setSelectedEvaluation("");
-                            }}
-                        >
+                        <form action={handleAssign}>
                             <input type="hidden" name="courseId" value={courseId} />
 
                             <DialogHeader>
@@ -174,10 +204,10 @@ export function EvaluationAssignmentManager({
                                         <div className="flex flex-col text-sm">
                                             <div className="flex items-center gap-1 text-muted-foreground">
                                                 <CalendarClock className="h-3 w-3" />
-                                                <span>{format(start, "dd/MM/yy HH:mm")}</span>
+                                                <span>{formatDateTime(start, "dd/MM/yy HH:mm")}</span>
                                             </div>
                                             <div className="text-xs text-muted-foreground ml-4">
-                                                hasta {format(end, "dd/MM/yy HH:mm")}
+                                                hasta {formatDateTime(end, "dd/MM/yy HH:mm")}
                                             </div>
                                         </div>
                                     </TableCell>
@@ -211,12 +241,7 @@ export function EvaluationAssignmentManager({
                                                     </Button>
                                                 </DialogTrigger>
                                                 <DialogContent className="sm:max-w-[425px]">
-                                                    <form
-                                                        action={async (formData) => {
-                                                            await updateEvaluationAssignmentAction(formData);
-                                                            setEditingAttempt(null);
-                                                        }}
-                                                    >
+                                                    <form action={handleUpdate}>
                                                         <input type="hidden" name="attemptId" value={attempt.id} />
                                                         <input type="hidden" name="courseId" value={courseId} />
 

@@ -62,8 +62,33 @@ export function DynamicBreadcrumb() {
                     submissions: "Entregas",
                 };
 
-                // Create the href for this segment using the full real path
-                const href = isLast ? undefined : `/${pathSegments.slice(0, i + 1).join("/")}`;
+                // Build the full href using ALL path segments up to and including this one
+                const fullHref = `/${pathSegments.slice(0, i + 1).join("/")}`;
+
+                // For "evaluations" segment, link back to the parent course page
+                // because /evaluations by itself is not a standalone page
+                let href: string | undefined;
+                if (isLast) {
+                    href = undefined;
+                } else if (segment === "evaluations") {
+                    // Link back to the course page (parent of evaluations)
+                    const courseIdIndex = pathSegments.indexOf("courses") + 1;
+                    if (courseIdIndex > 0 && courseIdIndex < pathSegments.length) {
+                        href = `/${pathSegments.slice(0, courseIdIndex + 1).join("/")}`;
+                    } else {
+                        href = fullHref;
+                    }
+                } else if (segment === "submissions") {
+                    // Link back to the attempt page (parent of submissions)
+                    const attemptIdIndex = pathSegments.indexOf("evaluations") + 1;
+                    if (attemptIdIndex > 0 && attemptIdIndex < pathSegments.length) {
+                        href = `/${pathSegments.slice(0, attemptIdIndex + 1).join("/")}`;
+                    } else {
+                        href = fullHref;
+                    }
+                } else {
+                    href = fullHref;
+                }
 
                 // Check if it's a UUID or ID (course/evaluation detail)
                 const isId = segment.match(/^[a-f0-9-]{36}$/) || (!segmentMap[segment] && segment.match(/^[a-z0-9]+$/i));

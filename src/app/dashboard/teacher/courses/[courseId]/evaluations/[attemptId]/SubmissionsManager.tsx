@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { formatDateTime } from "@/lib/dateUtils";
 import { Trash2, AlertCircle, ArrowLeft, Eye, ShieldAlert, FileText } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,11 @@ import dynamic from "next/dynamic";
 
 const DownloadReportButton = dynamic(
     () => import("@/features/teacher/DownloadReportButton").then((mod) => mod.DownloadReportButton),
+    { ssr: false }
+);
+
+const EvaluationStats = dynamic(
+    () => import("@/features/teacher/EvaluationStats").then((mod) => mod.EvaluationStats),
     { ssr: false }
 );
 
@@ -65,7 +71,7 @@ export function SubmissionsManager({
                 <div className="flex-1">
                     <h2 className="text-xl font-semibold">{attempt.evaluation.title}</h2>
                     <p className="text-sm text-muted-foreground">
-                        {format(new Date(attempt.startTime), "dd/MM/yyyy HH:mm")} - {format(new Date(attempt.endTime), "dd/MM/yyyy HH:mm")}
+                        {formatDateTime(attempt.startTime)} - {formatDateTime(attempt.endTime)}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -128,7 +134,7 @@ export function SubmissionsManager({
                                         {sub.submittedAt ? (
                                             <div className="flex flex-col">
                                                 <span className="text-xs font-semibold text-green-600 dark:text-green-400">Enviado</span>
-                                                <span className="text-[10px] text-muted-foreground">{format(new Date(sub.submittedAt), "dd/MM HH:mm")}</span>
+                                                <span className="text-[10px] text-muted-foreground">{formatDateTime(sub.submittedAt, "dd/MM HH:mm")}</span>
                                             </div>
                                         ) : (
                                             <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">En progreso</span>
@@ -222,6 +228,15 @@ export function SubmissionsManager({
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Statistics section */}
+            {isMounted && submissions.length > 0 && (
+                <EvaluationStats
+                    submissions={submissions}
+                    totalQuestions={attempt.evaluation.questions?.length || 0}
+                    questions={attempt.evaluation.questions || []}
+                />
+            )}
         </div>
     );
 }

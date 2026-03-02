@@ -6,9 +6,9 @@ import { evaluationService } from "@/services/evaluationService";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/dateUtils';
 import { FeedbackViewer } from "@/features/student/FeedbackViewer";
-
+import { DownloadSubmissionPDFWrapper as DownloadSubmissionPDF } from "@/features/teacher/DownloadSubmissionPDFWrapper";
 import prisma from "@/lib/prisma";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -46,6 +46,37 @@ export default async function SubmissionDetailsPage(
     const { user, attempt, answersList } = submission;
     const evaluation = attempt.evaluation;
 
+    // Fetch course and settings for PDF
+    const [course, settings] = await Promise.all([
+        prisma.course.findUnique({
+            where: { id: courseId },
+            include: { teacher: { select: { name: true } } }
+        }),
+        prisma.systemSettings.findUnique({
+            where: { id: "settings" },
+            select: { appTitle: true }
+        })
+    ]);
+
+    const appTitle = settings?.appTitle || "SmartClass";
+    const courseName = course?.title || "Curso";
+    const teacherName = course?.teacher?.name || "Docente";
+
+    // Build questions with answers for PDF
+    const questionsForPDF = evaluation.questions.map((question: any) => {
+        const answer = answersList.find((a: any) => a.questionId === question.id);
+        return {
+            id: question.id,
+            text: question.text,
+            type: question.type,
+            answer: answer ? {
+                answer: answer.answer,
+                score: answer.score,
+                aiFeedback: answer.aiFeedback,
+            } : undefined,
+        };
+    });
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4 border-b pb-4">
@@ -54,12 +85,29 @@ export default async function SubmissionDetailsPage(
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
-                <div>
+                <div className="flex-1">
                     <h2 className="text-xl font-semibold">Entrega de {user.name}</h2>
                     <p className="text-sm text-muted-foreground">
                         {user.email} &bull; Evaluación: {evaluation.title}
                     </p>
                 </div>
+                {/* PDF Download Button */}
+                <DownloadSubmissionPDF
+                    appTitle={appTitle}
+                    studentName={user.name}
+                    studentEmail={user.email}
+                    evaluationTitle={evaluation.title}
+                    courseName={courseName}
+                    teacherName={teacherName}
+                    startTime={attempt.startTime}
+                    endTime={attempt.endTime}
+                    submittedAt={submission.submittedAt}
+                    score={submission.score !== undefined ? submission.score : null}
+                    totalQuestions={evaluation.questions.length}
+                    answeredQuestions={answersList.length}
+                    expulsions={submission.expulsions || 0}
+                    questions={questionsForPDF}
+                />
             </div>
 
             {/* Resumen Full Width superior */}
@@ -73,7 +121,7 @@ export default async function SubmissionDetailsPage(
                     {submission.submittedAt && (
                         <div className="flex flex-col gap-1">
                             <span className="text-muted-foreground">Fecha de envío:</span>
-                            <span className="font-medium">{format(new Date(submission.submittedAt), "dd/MM/yyyy HH:mm")}</span>
+                            <span className="font-medium">{formatDateTime(submission.submittedAt)}</span>
                         </div>
                     )}
                     <div className="flex flex-col gap-1">
@@ -94,8 +142,8 @@ export default async function SubmissionDetailsPage(
                     <p className="text-muted-foreground">No hay preguntas en esta evaluación.</p>
                 ) : (
                     <div className="space-y-6">
-                        {evaluation.questions.map((question, index) => {
-                            const answer = answersList.find(a => a.questionId === question.id);
+                        {evaluation.questions.map((question: any, index: number) => {
+                            const answer = answersList.find((a: any) => a.questionId === question.id);
                             return (
                                 <div key={question.id} className="rounded-md border bg-card overflow-hidden">
                                     <div className="bg-muted p-4 border-b">

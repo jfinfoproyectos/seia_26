@@ -268,6 +268,12 @@ export const evaluationService = {
                         email: true
                     }
                 },
+                answersList: {
+                    select: {
+                        questionId: true,
+                        score: true,
+                    }
+                },
                 _count: {
                     select: {
                         answersList: true
