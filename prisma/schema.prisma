@@ -1,0 +1,272 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  role String? // "admin", "teacher", "student"
+
+  banned     Boolean?  @default(false)
+  banReason  String?
+  banExpires DateTime?
+
+  // Relations
+  coursesCreated        Course[]               @relation("TeacherCourses")
+  enrollments           Enrollment[]
+  evaluationsCreated    Evaluation[]           @relation("EvaluationAuthor")
+  evaluationSubmissions EvaluationSubmission[]
+  profile               Profile?
+  remarks               Remark[]
+  remarksCreated        Remark[]               @relation("TeacherRemarks")
+  encryptedGeminiApiKey String?
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Profile {
+  id                        String    @id @default(cuid())
+  identificacion            String
+  nombres                   String
+  apellido                  String
+  telefono                  String?
+  userId                    String    @unique
+  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  dataProcessingConsent     Boolean   @default(false)
+  dataProcessingConsentDate DateTime?
+
+  @@map("profile")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model SystemSettings {
+  id                    String   @id @default("settings")
+  appTitle              String   @default("SmartClass")
+  encryptedGeminiApiKey String?
+  allowUserApiKeys      Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("verification")
+}
+
+model Course {
+  id                   String    @id @default(cuid())
+  title                String
+  description          String?
+  registrationOpen     Boolean   @default(true)
+  registrationDeadline DateTime?
+  teacherId            String
+  teacher              User      @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Cascade)
+  lateCode             String?
+  lateCodeExpiresAt    DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  enrollments        Enrollment[]
+  remarks            Remark[]
+  evaluationAttempts EvaluationAttempt[] @relation("CourseEvaluationAttempts")
+
+  @@map("course")
+}
+
+model Enrollment {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  status    EnrollmentStatus @default(APPROVED)
+
+  @@unique([userId, courseId])
+  @@map("enrollment")
+}
+
+enum EnrollmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+
+
+enum RemarkType {
+  ATTENTION
+  COMMENDATION
+}
+
+model Remark {
+  id          String     @id @default(cuid())
+  type        RemarkType
+  title       String
+  description String
+  date        DateTime   @default(now())
+  courseId    String
+  course      Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacherId   String
+  teacher     User       @relation("TeacherRemarks", fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("remark")
+}
+
+// Modelo para Evaluación
+model Evaluation {
+  id                    String              @id @default(cuid())
+  title                 String
+  description           String?
+  helpUrl               String? // URL de ayuda o recursos adicionales
+  authorId              String
+  author                User                @relation("EvaluationAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  questions             Question[]          @relation("EvaluationQuestions")
+  attempts              EvaluationAttempt[] @relation("EvaluationAttempts")
+  maxSupportAttempts    Int                 @default(3) // Máximo número de peticiones de ayuda/IA por pregunta
+  aiSupportDelaySeconds Int                 @default(60) // Tiempo en segundos de espera entre peticiones a la IA
+  expulsionPenalty      Float               @default(0) // Puntos a restar por cada expulsión del estudiante (0 = sólo registrar)
+  wildcardAiHints       Int                 @default(0) // Cantidad de comodines "Pista de IA" disponibles (0 = deshabilitado)
+  wildcardSecondChance  Int                 @default(0) // Cantidad de comodines "Segunda Oportunidad" disponibles (0 = deshabilitado)
+
+  @@map("evaluation")
+}
+
+// Modelo para Pregunta
+model Question {
+  id           String             @id @default(cuid())
+  evaluationId String
+  evaluation   Evaluation         @relation("EvaluationQuestions", fields: [evaluationId], references: [id], onDelete: Cascade)
+  text         String             @db.Text // Contenido del editor markdown
+  type         String //"Code", "Text"
+  language     String? // Lenguaje de programación para preguntas de tipo CODE
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  answers      EvaluationAnswer[] @relation("QuestionAnswers")
+
+  @@map("question")
+}
+
+// Modelo para Intento (EvaluationAttempt)
+model EvaluationAttempt {
+  id           String                 @id @default(cuid())
+  evaluationId String
+  evaluation   Evaluation             @relation("EvaluationAttempts", fields: [evaluationId], references: [id], onDelete: Cascade)
+  startTime    DateTime
+  endTime      DateTime
+  courseId     String? // Relación opcional para asignar a un grupo específico
+  course       Course?                @relation("CourseEvaluationAttempts", fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  submissions  EvaluationSubmission[] @relation("AttemptSubmissions")
+
+  @@map("evaluation_attempt")
+}
+
+// Modelo para Presentación (EvaluationSubmission)
+model EvaluationSubmission {
+  id            String             @id @default(cuid())
+  attemptId     String
+  attempt       EvaluationAttempt  @relation("AttemptSubmissions", fields: [attemptId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score         Float? // Calificación (añadido previamente)  
+  submittedAt   DateTime? // Fecha y hora de envío
+  expulsions    Int                @default(0) // Cantidad de expulsiones registradas durante la evaluación
+  wildcardsUsed Json?              @default("{}") // JSON: { aiHintsUsed: 0, secondChanceUsed: 0, secondChanceQuestions: [] }
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  answersList   EvaluationAnswer[] @relation("SubmissionAnswers")
+  deviceId      String? // Identificador único de dispositivo/sesión
+
+  @@map("evaluation_submission")
+}
+
+// Modelo para Respuesta (EvaluationAnswer)
+model EvaluationAnswer {
+  id              String               @id @default(cuid())
+  submissionId    String
+  submission      EvaluationSubmission @relation("SubmissionAnswers", fields: [submissionId], references: [id], onDelete: Cascade)
+  questionId      String
+  question        Question             @relation("QuestionAnswers", fields: [questionId], references: [id], onDelete: Cascade)
+  answer          String               @db.Text // Respuesta del estudiante
+  score           Float? // Puntuación máxima específica de esta respuesta
+  aiFeedback      Json? // JSON Array: [{ attempt: 1, feedback: "", score: 0.0, isCorrect: boolean }]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  supportAttempts Int                  @default(0) // Contador de veces que se ha solicitado ayuda/IA
+
+  @@map("evaluation_answer")
+}

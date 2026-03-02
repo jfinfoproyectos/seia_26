@@ -1,0 +1,37 @@
+.next/dev/types/validator.ts(134,39): error TS2307: Cannot find module '../../../src/app/dashboard/calendar/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(188,39): error TS2307: Cannot find module '../../../src/app/dashboard/student/notifications/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(206,39): error TS2307: Cannot find module '../../../src/app/dashboard/student/schedule/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(269,39): error TS2307: Cannot find module '../../../src/app/dashboard/teacher/notifications/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(287,39): error TS2307: Cannot find module '../../../src/app/dashboard/teacher/schedule/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(296,39): error TS2307: Cannot find module '../../../src/app/dashboard/teacher/statistics/page.js' or its corresponding type declarations.
+src/app/actions.ts(1277,50): error TS2307: Cannot find module '@/services/notificationService' or its corresponding type declarations.
+src/app/actions.ts(1342,50): error TS2307: Cannot find module '@/services/notificationService' or its corresponding type declarations.
+src/app/actions.ts(1355,9): error TS2322: Type '"NOTIFICATION"' is not assignable to type 'LogEntity'.
+src/app/actions.ts(1378,39): error TS2339: Property 'notification' does not exist on type 'PrismaClient'.
+src/app/actions.ts(1383,50): error TS2307: Cannot find module '@/services/notificationService' or its corresponding type declarations.
+src/app/actions.ts(1390,9): error TS2322: Type '"NOTIFICATION"' is not assignable to type 'LogEntity'.
+src/app/actions.ts(1409,50): error TS2307: Cannot find module '@/services/notificationService' or its corresponding type declarations.
+src/app/actions.ts(1419,50): error TS2307: Cannot find module '@/services/notificationService' or its corresponding type declarations.
+src/app/actions.ts(1429,50): error TS2307: Cannot find module '@/services/notificationService' or its corresponding type declarations.
+src/app/actions.ts(1440,50): error TS2307: Cannot find module '@/services/notificationService' or its corresponding type declarations.
+src/app/actions.ts(1451,50): error TS2307: Cannot find module '@/services/notificationService' or its corresponding type declarations.
+src/app/admin-actions.ts(297,33): error TS2339: Property 'notification' does not exist on type 'PrismaClient'.
+src/app/dashboard/teacher/courses/[courseId]/page.tsx(15,32): error TS2307: Cannot find module '@/features/teacher/VisualSchedule' or its corresponding type declarations.
+src/app/dashboard/teacher/courses/[courseId]/page.tsx(36,16): error TS2551: Property 'teacher' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; title: string; description: string | null; registrationOpen: boolean; registrationDeadline: Date | null; startDate: Date | null; ... 4 more ...; lateCodeExpiresAt: Date | null; }'. Did you mean 'teacherId'?
+src/services/auditLogger.ts(245,13): error TS2322: Type '"NOTIFICATION_SEND"' is not assignable to type 'LogAction'.
+src/services/auditLogger.ts(246,13): error TS2322: Type '"NOTIFICATION"' is not assignable to type 'LogEntity'.
+src/services/courseService.ts(26,26): error TS2339: Property 'courseSchedule' does not exist on type 'PrismaClient'.
+src/services/courseService.ts(57,17): error TS2353: Object literal may only specify known properties, and 'schedules' does not exist in type 'CourseInclude<DefaultArgs>'.
+src/services/courseService.ts(75,28): error TS2339: Property 'schedules' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; title: string; description: string | null; registrationOpen: boolean; registrationDeadline: Date | null; startDate: Date | null; ... 4 more ...; lateCodeExpiresAt: Date | null; }'.
+src/services/courseService.ts(75,42): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/services/courseService.ts(82,26): error TS2339: Property 'courseSchedule' does not exist on type 'PrismaClient'.
+src/services/courseService.ts(83,45): error TS7006: Parameter 'schedule' implicitly has an 'any' type.
+src/services/courseService.ts(93,26): error TS2339: Property 'activities' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; title: string; description: string | null; registrationOpen: boolean; registrationDeadline: Date | null; startDate: Date | null; ... 4 more ...; lateCodeExpiresAt: Date | null; }'.
+src/services/courseService.ts(97,36): error TS2339: Property 'activities' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; title: string; description: string | null; registrationOpen: boolean; registrationDeadline: Date | null; startDate: Date | null; ... 4 more ...; lateCodeExpiresAt: Date | null; }'.
+src/services/courseService.ts(97,51): error TS7006: Parameter 'activity' implicitly has an 'any' type.
+src/services/courseService.ts(141,26): error TS2339: Property 'courseSchedule' does not exist on type 'PrismaClient'.
+src/services/courseService.ts(147,30): error TS2339: Property 'courseSchedule' does not exist on type 'PrismaClient'.
+src/services/courseService.ts(169,17): error TS2353: Object literal may only specify known properties, and 'schedules' does not exist in type 'CourseInclude<DefaultArgs>'.
+src/services/courseService.ts(189,25): error TS2353: Object literal may only specify known properties, and 'schedules' does not exist in type 'CourseInclude<DefaultArgs>'.
+src/services/courseService.ts(198,39): error TS2551: Property 'course' does not exist on type '{ id: string; createdAt: Date; userId: string; courseId: string; status: EnrollmentStatus; }'. Did you mean 'courseId'?
+src/services/courseService.ts(222,17): error TS2353: Object literal may only specify known properties, and 'schedules' does not exist in type 'CourseInclude<DefaultArgs>'.

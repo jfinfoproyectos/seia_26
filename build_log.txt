@@ -1,0 +1,51 @@
+
+> smartclass@0.1.0 build
+> next build
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   Ôû▓ Next.js 16.0.10 (Turbopack)
+   - Environments: .env
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Turbopack build encountered 1 warnings:
+./node_modules/fstream/lib
+Package rimraf can't be external
+The request rimraf matches serverExternalPackages (or the default list).
+The package.json of the package has no name or version.
+
+
+ Ô£ô Compiled successfully in 12.2s
+   Running TypeScript ...
+   Collecting page data using 11 workers ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   Generating static pages using 11 workers (0/26) ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   Generating static pages using 11 workers (6/26) 
+   Generating static pages using 11 workers (12/26) 
+   Generating static pages using 11 workers (19/26) 
+ Ô¿» useSearchParams() should be wrapped in a suspense boundary at page "/share". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at S (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\.next\server\chunks\ssr\node_modules_next_cf02c53c._.js:2:2111)
+    at p (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\.next\server\chunks\ssr\node_modules_next_cf02c53c._.js:4:4878)
+    at l (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\.next\server\chunks\ssr\[root-of-the-server]__c8acbe7a._.js:1:16577)
+    at ar (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.prod.js:2:84366)
+    at aa (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.prod.js:2:86185)
+    at as (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.prod.js:2:107952)
+    at ao (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.prod.js:2:105374)
+    at an (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.prod.js:2:84718)
+    at aa (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.prod.js:2:86234)
+    at aa (C:\Users\jhonf\Desktop\Info\2026\Proyectos\smartclass\node_modules\next\dist\compiled\next-server\app-page-turbo.runtime.prod.js:2:104714)
+Error occurred prerendering page "/share". Read more: https://nextjs.org/docs/messages/prerender-error
+Export encountered an error on /share/page: /share, exiting the build.
+ Ô¿» Next.js build worker exited with code: 1 and signal: null
