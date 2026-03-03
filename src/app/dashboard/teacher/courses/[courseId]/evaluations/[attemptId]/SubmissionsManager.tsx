@@ -235,6 +235,10 @@ export function SubmissionsManager({
                     submissions={submissions}
                     totalQuestions={attempt.evaluation.questions?.length || 0}
                     questions={attempt.evaluation.questions || []}
+                    evaluationId={attempt.evaluationId}
+                    attemptId={attempt.id}
+                    courseName={courseName}
+                    teacherName={teacherName}
                 />
             )}
         </div>

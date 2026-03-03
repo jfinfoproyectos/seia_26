@@ -181,3 +181,87 @@ export async function getAiHint(
         throw new Error(`No se pudo obtener la pista: ${error.message}`);
     }
 }
+
+export interface AIInsightsResponse {
+    weaknesses: string[];
+    strengths: string[];
+    recommendations: string[];
+    globalAnalysis: string;
+    commonErrors: { concept: string; description: string; prevalence: string }[];
+}
+
+/**
+ * Generate group insights for a teacher based on evaluation results.
+ */
+export async function getGroupAIInsights(
+    evaluationTitle: string,
+    questions: { text: string; type: string }[],
+    stats: { questionIndex: number; averageScore: number; maxScore: number; successRate: number }[],
+    sampleFeedback?: string[]
+): Promise<AIInsightsResponse> {
+    try {
+        const ai = await getGeminiClient();
+
+        const dataSummary = stats.map(s => {
+            const q = questions[s.questionIndex];
+            return `- Pregunta ${s.questionIndex + 1} (${q.type}): "${q.text.substring(0, 100)}..." 
+              Resultados: Promedio ${s.averageScore}/${s.maxScore}, Tasa de éxito: ${(s.successRate * 100).toFixed(1)}%`;
+        }).join("\n");
+
+        const feedbackContext = sampleFeedback && sampleFeedback.length > 0
+            ? `\n**Muestra de retroalimentaciones de errores (para diagnóstico)**:\n${sampleFeedback.join("\n")}`
+            : "";
+
+        const prompt = `
+        Eres un asesor pedagógico experto y analista de datos educativos.
+        Tu tarea es analizar los resultados de una evaluación titulada "${evaluationTitle}" y proporcionar "Insights" (hallazgos clave) estratégicos para el profesor.
+        
+        **Resumen de Resultados por Pregunta**:
+        ${dataSummary}
+        ${feedbackContext}
+        
+        **TU TAREA**:
+        1. Identifica las principales debilidades del grupo (temas o preguntas con bajo rendimiento).
+        2. Identifica las fortalezas (donde el grupo destacó).
+        3. DIAGNÓSTICO DE ERRORES COMUNES: Agrupa los fallos detectados en clústeres basados en conceptos pedagógicos o de programación (ej: "Manejo de estados", "Lógica booleana", "Complejidad algorítmica"). Para cada grupo, indica el concepto, una descripción del error y qué porcentaje aproximado del grupo (prevalencia) parece verse afectado.
+        4. Proporciona recomendaciones pedagógicas concretas.
+        5. Realiza un breve análisis global del desempeño.
+        
+        **REGLAS DE CONTENIDO**:
+        - Sé conciso pero sustancial.
+        - No menciones nombres de estudiantes individuales.
+        - Usa un tono profesional y constructivo.
+        
+        **SALIDA REQUERIDA (Formato JSON estricto)**:
+        {
+            "weaknesses": ["punto 1", "punto 2", ...],
+            "strengths": ["punto 1", "punto 2", ...],
+            "recommendations": ["punto 1", "punto 2", ...],
+            "globalAnalysis": "resumen en texto plano",
+            "commonErrors": [
+                { "concept": "Nombre del Concepto", "description": "Descripción del fallo común", "prevalence": "60% del grupo" },
+                ...
+            ]
+        }
+        `;
+
+        const result = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: prompt,
+            config: { responseMimeType: "application/json" }
+        });
+
+        const text = result.text;
+        if (!text) throw new Error("No se recibió respuesta de la IA.");
+
+        const parsed = extractJSON<AIInsightsResponse>(text);
+        return parsed;
+    } catch (error: any) {
+        console.error("Error generating group insights:", error);
+        const errorString = typeof error === 'string' ? error : (error.message || "");
+        if (errorString.includes("429") || errorString.toLowerCase().includes("quota") || errorString.includes("RESOURCE_EXHAUSTED")) {
+            throw new Error("Has excedido la cuota gratuita de peticiones a la IA de Gemini.");
+        }
+        throw new Error(`No se pudieron generar los insights: ${error.message}`);
+    }
+}

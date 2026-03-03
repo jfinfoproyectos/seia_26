@@ -31,7 +31,7 @@ import {
     SheetTrigger,
     SheetFooter,
 } from "@/components/ui/sheet";
-import { Plus, Search, UserPlus, Trash2, UserCheck, Eye, Calendar, MoreHorizontal, ShieldAlert, ShieldCheck, FileSpreadsheet, ClipboardX } from "lucide-react";
+import { Plus, Search, UserPlus, Trash2, UserCheck, Eye, Calendar, MoreHorizontal, ShieldAlert, ShieldCheck, ClipboardX } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
@@ -64,25 +64,6 @@ export function StudentManager({ courseId, initialStudents }: { courseId: string
     const [isSearching, setIsSearching] = useState(false);
     const [filterQuery, setFilterQuery] = useState("");
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-    const [isExporting, setIsExporting] = useState(false);
-
-
-    const handleExportReport = async () => {
-        setIsExporting(true);
-        try {
-            const { getCourseGradesReportAction } = await import("@/app/actions");
-            const { exportToExcel } = await import("@/lib/export-utils");
-
-            const data = await getCourseGradesReportAction(courseId);
-            exportToExcel(data, `Reporte_Notas_${new Date().toISOString().split('T')[0]}`, "Notas");
-            toast.success("Reporte generado exitosamente");
-        } catch (error) {
-            console.error(error);
-            toast.error("Error al generar el reporte");
-        } finally {
-            setIsExporting(false);
-        }
-    };
 
 
 
@@ -165,21 +146,6 @@ export function StudentManager({ courseId, initialStudents }: { courseId: string
                     />
                 </div>
                 <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={handleExportReport}
-                        disabled={isExporting}
-                        className="w-full sm:w-auto"
-                    >
-                        {isExporting ? (
-                            <>Generando...</>
-                        ) : (
-                            <>
-                                <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
-                                Reporte de Calificaciones
-                            </>
-                        )}
-                    </Button>
 
                     <Sheet open={isOpen} onOpenChange={setIsOpen}>
                         <SheetTrigger asChild>

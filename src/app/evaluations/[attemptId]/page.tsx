@@ -17,14 +17,17 @@ export default async function EvaluationPage({ params }: { params: Promise<{ att
         redirect("/dashboard/student");
     }
 
-    // Verify Time Window
-    const now = new Date();
-    if (now < new Date(attempt.startTime) || now > new Date(attempt.endTime)) {
-        redirect("/dashboard/student");
-    }
-
     // Initialize or fetch existing submission
     const submission = await evaluationService.getOrCreateSubmission(attemptId, session.user.id);
+
+    // Verify Time Window ONLY if not submitted
+    const isSubmitted = !!submission.submittedAt;
+    if (!isSubmitted) {
+        const now = new Date();
+        if (now < new Date(attempt.startTime) || now > new Date(attempt.endTime)) {
+            redirect("/dashboard/student");
+        }
+    }
 
     return (
         <TakeEvaluationLayout

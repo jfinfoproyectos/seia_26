@@ -322,6 +322,67 @@ export const evaluationService = {
     },
 
     /**
+     * Export / Import
+     */
+    async getFullEvaluationData(id: string, authorId: string) {
+        const evaluation = await prisma.evaluation.findUnique({
+            where: { id },
+            include: {
+                questions: {
+                    orderBy: { createdAt: "asc" }
+                }
+            }
+        });
+
+        if (!evaluation || (evaluation.authorId !== authorId && authorId !== 'admin')) {
+            throw new Error("Unauthorized or evaluation not found");
+        }
+
+        // Return data without IDs to avoid conflicts on import
+        return {
+            title: evaluation.title,
+            description: evaluation.description,
+            helpUrl: evaluation.helpUrl,
+            maxSupportAttempts: evaluation.maxSupportAttempts,
+            aiSupportDelaySeconds: evaluation.aiSupportDelaySeconds,
+            expulsionPenalty: evaluation.expulsionPenalty,
+            wildcardAiHints: evaluation.wildcardAiHints,
+            wildcardSecondChance: evaluation.wildcardSecondChance,
+            questions: evaluation.questions.map(q => ({
+                text: q.text,
+                type: q.type,
+                language: q.language
+            }))
+        };
+    },
+
+    async createFullEvaluation(authorId: string, data: any) {
+        return await prisma.$transaction(async (tx) => {
+            const evaluation = await tx.evaluation.create({
+                data: {
+                    title: data.title,
+                    description: data.description,
+                    helpUrl: data.helpUrl,
+                    authorId,
+                    maxSupportAttempts: data.maxSupportAttempts || 3,
+                    aiSupportDelaySeconds: data.aiSupportDelaySeconds || 60,
+                    expulsionPenalty: data.expulsionPenalty ?? 0,
+                    wildcardAiHints: data.wildcardAiHints ?? 0,
+                    wildcardSecondChance: data.wildcardSecondChance ?? 0,
+                    questions: {
+                        create: data.questions.map((q: any) => ({
+                            text: q.text,
+                            type: q.type,
+                            language: q.language
+                        }))
+                    }
+                }
+            });
+            return evaluation;
+        });
+    },
+
+    /**
      * Lazy finalization of expired submissions.
      * Marks all unsubmitted attempts as submitted at the deadline if they have expired.
      */

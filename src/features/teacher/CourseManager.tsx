@@ -45,9 +45,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { getMultiCourseGradesReportAction } from "@/app/actions";
 import { exportMultiSheetExcel } from "@/lib/export-utils";
-import { FileSpreadsheet } from "lucide-react";
 
 // Helper function to format date consistently on server and client
 function formatDateTime(date: Date | string): string {
@@ -274,42 +272,9 @@ export function CourseManager({ initialCourses, pendingEnrollments = [], current
     const [editCourse, setEditCourse] = useState<Course | null>(null);
     const [isCloning, setIsCloning] = useState(false);
 
-    // Multi-course export state
-    const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
     const [isExporting, setIsExporting] = useState(false);
 
     const allCourses = initialCourses;
-
-    const handleSelectAll = (checked: boolean) => {
-        if (checked) {
-            setSelectedCourses(allCourses.map(c => c.id));
-        } else {
-            setSelectedCourses([]);
-        }
-    };
-
-    const handleSelectCourse = (courseId: string, checked: boolean) => {
-        if (checked) {
-            setSelectedCourses(prev => [...prev, courseId]);
-        } else {
-            setSelectedCourses(prev => prev.filter(id => id !== courseId));
-        }
-    };
-
-    const handleExportMulti = async () => {
-        if (selectedCourses.length === 0) return;
-        setIsExporting(true);
-        try {
-            const reports = await getMultiCourseGradesReportAction(selectedCourses);
-            await exportMultiSheetExcel(reports, `Reporte_General_${new Date().toISOString().split('T')[0]}`);
-            toast.success("Reporte generado exitosamente");
-        } catch (error) {
-            console.error(error);
-            toast.error("Error al generar el reporte");
-        } finally {
-            setIsExporting(false);
-        }
-    };
 
     const handleExportComplete = async (courseId: string, courseTitle: string) => {
         try {
@@ -327,149 +292,12 @@ export function CourseManager({ initialCourses, pendingEnrollments = [], current
             toast.error("Error al exportar datos");
         }
     };
-    const CourseTable = ({ courses }: { courses: Course[] }) => (
-        <div className="w-full overflow-x-auto rounded-md border">
-            <Table className="min-w-[800px]">
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[50px]">
-                            <Checkbox
-                                checked={selectedCourses.length === initialCourses.length && initialCourses.length > 0}
-                                onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
-                            />
-                        </TableHead>
-                        <TableHead>Título</TableHead>
-                        <TableHead className="hidden md:table-cell">Descripción</TableHead>
-                        <TableHead>Estudiantes</TableHead>
-                        <TableHead className="hidden lg:table-cell">Inscripción</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {courses.map((course) => (
-                        <TableRow key={course.id}>
-                            <TableCell>
-                                <Checkbox
-                                    checked={selectedCourses.includes(course.id)}
-                                    onCheckedChange={(checked) => handleSelectCourse(course.id, checked as boolean)}
-                                />
-                            </TableCell>
-                            <TableCell className="font-medium">{course.title}</TableCell>
-                            <TableCell className="hidden md:table-cell max-w-md truncate" title={course.description || ""}>
-                                {course.description || "Sin descripción"}
-                            </TableCell>
-                            <TableCell>{course._count.enrollments}</TableCell>
-                            <TableCell className="hidden lg:table-cell">
-                                <RegistrationSettingsDialog course={course} />
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <TooltipProvider>
-                                    <div className="flex justify-end gap-1 flex-wrap">
-                                        <Link href={`/dashboard/teacher/courses/${course.id}`}>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Ver Detalles</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </Link>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => {
-                                                        setEditCourse(course);
-                                                        setIsOpen(true);
-                                                    }}
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Editar</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => {
-                                                        setEditCourse({
-                                                            ...course,
-                                                            title: `Copia de ${course.title}`,
-                                                            id: course.id // Keep ID for reference but flag as cloning
-                                                        });
-                                                        setIsCloning(true);
-                                                        setIsOpen(true);
-                                                    }}
-                                                >
-                                                    <Copy className="h-4 w-4" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Clonar Curso</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                    onClick={() => handleExportComplete(course.id, course.title)}
-                                                >
-                                                    <Download className="h-4 w-4" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Exportar Datos Completos</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                        <DeleteCourseDialog courseId={course.id} courseTitle={course.title} />
-                                    </div>
-                                </TooltipProvider>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                    {courses.length === 0 && (
-                        <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
-                                No hay cursos en esta sección.
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
-        </div>
-    );
 
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center gap-4">
                 <div className="flex items-center gap-2">
                     <h3 className="text-xl font-semibold">Gestión de Cursos</h3>
-                    {selectedCourses.length > 0 && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleExportMulti}
-                            disabled={isExporting}
-                            className="ml-4"
-                        >
-                            {isExporting ? "Generando..." : (
-                                <>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
-                                    Reporte de Calificaciones ({selectedCourses.length})
-                                </>
-                            )}
-                        </Button>
-                    )}
                 </div>
                 <Dialog open={isOpen} onOpenChange={(open) => {
                     setIsOpen(open);
@@ -559,7 +387,7 @@ export function CourseManager({ initialCourses, pendingEnrollments = [], current
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="courses" className="mt-4">
-                    <CourseTable courses={allCourses} />
+                    <CourseTable courses={allCourses} onEdit={(c) => { setEditCourse(c); setIsOpen(true); }} onClone={(c) => { setEditCourse({ ...c, title: `Copia de ${c.title}` }); setIsCloning(true); setIsOpen(true); }} onExport={handleExportComplete} />
                 </TabsContent>
                 <TabsContent value="requests" className="mt-4">
                     <EnrollmentRequests requests={pendingEnrollments} />
@@ -568,3 +396,105 @@ export function CourseManager({ initialCourses, pendingEnrollments = [], current
         </div >
     );
 }
+
+const CourseTable = ({ courses, onEdit, onClone, onExport }: { courses: Course[], onEdit: (c: Course) => void, onClone: (c: Course) => void, onExport: (id: string, title: string) => void }) => (
+    <div className="w-full overflow-x-auto rounded-md border">
+        <Table className="min-w-[800px]">
+            <TableHeader>
+                <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>Título</TableHead>
+                    <TableHead className="hidden md:table-cell">Descripción</TableHead>
+                    <TableHead>Estudiantes</TableHead>
+                    <TableHead className="hidden lg:table-cell">Inscripción</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {courses.map((course) => (
+                    <TableRow key={course.id}>
+                        <TableCell>
+                        </TableCell>
+                        <TableCell className="font-medium">{course.title}</TableCell>
+                        <TableCell className="hidden md:table-cell max-w-md truncate" title={course.description || ""}>
+                            {course.description || "Sin descripción"}
+                        </TableCell>
+                        <TableCell>{course._count.enrollments}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                            <RegistrationSettingsDialog course={course} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <TooltipProvider>
+                                <div className="flex justify-end gap-1 flex-wrap">
+                                    <Link href={`/dashboard/teacher/courses/${course.id}`}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Ver Detalles</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </Link>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => onEdit(course)}
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Editar</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => onClone(course)}
+                                            >
+                                                <Copy className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Clonar Curso</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                onClick={() => onExport(course.id, course.title)}
+                                            >
+                                                <Download className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Exportar Datos Completos</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    <DeleteCourseDialog courseId={course.id} courseTitle={course.title} />
+                                </div>
+                            </TooltipProvider>
+                        </TableCell>
+                    </TableRow>
+                ))}
+                {courses.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                            No hay cursos en esta sección.
+                        </TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
+    </div>
+);

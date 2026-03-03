@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { courseService } from "@/services/courseService";
+import { evaluationService } from "@/services/evaluationService";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { parseISOAsUTC, toUTCStartOfDay } from "@/lib/dateUtils";
@@ -459,33 +460,6 @@ export async function getScheduleViewAction() {
 
 
 
-export async function getCourseGradesReportAction(courseId: string) {
-    const session = await getSession();
-    if (!session || session.user.role !== "teacher") throw new Error("Unauthorized");
-    return await courseService.getCourseGradesReport(courseId);
-}
-
-export async function getMultiCourseGradesReportAction(courseIds: string[]) {
-    const session = await getSession();
-    if (!session || session.user.role !== "teacher") throw new Error("Unauthorized");
-
-    const reports = [];
-    for (const id of courseIds) {
-        // Optimally this should be done in parallel or a single query, but reuse existing service for simplicity first
-        // Check ownership/permissions first ideally, but getCourseGradesReport doesn't check ownership internally (relies on caller or simple findUnique)
-        // We'll trust the ID is valid or service handles it. 
-        // Better: ensure the teacher owns these courses.
-        const course = await prisma.course.findUnique({ where: { id, teacherId: session.user.id }, select: { title: true } });
-        if (course) {
-            const data = await courseService.getCourseGradesReport(id);
-            reports.push({
-                name: course.title.substring(0, 30), // Excel sheet name limit
-                data: data
-            });
-        }
-    }
-    return reports;
-}
 
 
 
@@ -629,9 +603,9 @@ export async function updateEvaluationAction(formData: FormData) {
 
     const maxSupportAttempts = maxSupportAttemptsStr ? parseInt(maxSupportAttemptsStr, 10) : undefined;
     const aiSupportDelaySeconds = aiSupportDelaySecondsStr ? parseInt(aiSupportDelaySecondsStr, 10) : undefined;
-    const expulsionPenalty = expulsionPenaltyStr !== null && expulsionPenaltyStr !== "" ? parseFloat(expulsionPenaltyStr) : undefined;
-    const wildcardAiHints = wildcardAiHintsStr !== null && wildcardAiHintsStr !== "" ? parseInt(wildcardAiHintsStr, 10) : undefined;
-    const wildcardSecondChance = wildcardSecondChanceStr !== null && wildcardSecondChanceStr !== "" ? parseInt(wildcardSecondChanceStr, 10) : undefined;
+    const expulsionPenalty = (expulsionPenaltyStr !== null && expulsionPenaltyStr !== "") ? parseFloat(expulsionPenaltyStr) : undefined;
+    const wildcardAiHints = (wildcardAiHintsStr !== null && wildcardAiHintsStr !== "") ? parseInt(wildcardAiHintsStr, 10) : undefined;
+    const wildcardSecondChance = (wildcardSecondChanceStr !== null && wildcardSecondChanceStr !== "") ? parseInt(wildcardSecondChanceStr, 10) : undefined;
 
     const { evaluationService } = await import("@/services/evaluationService");
 
@@ -1224,4 +1198,121 @@ export async function generateAnswerAction(questionText: string, type: string, l
 
     const { generateSampleAnswer } = await import("@/services/gemini/questionGenerationService");
     return await generateSampleAnswer(questionText, type, language);
+}
+
+export async function getGroupAIInsightsAction(evaluationId: string, attemptId: string) {
+    const session = await getSession();
+    if (!session || session.user.role !== "teacher") throw new Error("Unauthorized");
+
+    const { evaluationService } = await import("@/services/evaluationService");
+    const { getGroupAIInsights } = await import("@/services/gemini/evaluationAnalysisService");
+
+    // 1. Fetch evaluation and questions
+    const evaluation = await prisma.evaluation.findUnique({
+        where: { id: evaluationId },
+        include: { questions: true }
+    });
+    if (!evaluation) throw new Error("Evaluation not found");
+
+    // 2. Fetch all submissions for this attempt
+    const submissions = await evaluationService.getSubmissionsByAttempt(attemptId);
+
+    // 3. Calculate stats per question
+    const stats = evaluation.questions.map((q, index) => {
+        const answersForQ = submissions
+            .flatMap(s => (s.answersList || []))
+            .filter((a: any) => a.questionId === q.id && a.score !== null);
+
+        const avg = answersForQ.length > 0
+            ? answersForQ.reduce((acc: number, a: any) => acc + Number(a.score), 0) / answersForQ.length
+            : 0;
+
+        // Success rate: answers with score >= 3.0 (60% of 5.0)
+        const successCount = answersForQ.filter((a: any) => Number(a.score) >= 3.0).length;
+
+        return {
+            questionIndex: index,
+            averageScore: Number(avg.toFixed(2)),
+            maxScore: 5.0,
+            successRate: answersForQ.length > 0 ? successCount / answersForQ.length : 0
+        };
+    });
+
+    // 4. Collect representative feedback from wrong answers for better diagnosis
+    // Get up to 15 unique feedbacks from answers with score < 3.0
+    const sampleFeedbackList = submissions
+        .flatMap(s => (s.answersList || []))
+        .filter((a: any) => a.score !== null && Number(a.score) < 3.0 && a.aiFeedback && a.aiFeedback.length > 0)
+        .map((a: any) => a.aiFeedback[a.aiFeedback.length - 1].feedback)
+        .filter((val, index, self) => self.indexOf(val) === index) // Unique
+        .slice(0, 15);
+
+    // 5. Generate AI Insights
+    const insights = await getGroupAIInsights(
+        evaluation.title,
+        evaluation.questions.map(q => ({ text: q.text, type: q.type })),
+        stats,
+        sampleFeedbackList
+    );
+
+    return insights;
+}
+
+export async function getPlagiarismAnalysisAction(attemptId: string) {
+    const session = await getSession();
+    if (!session || session.user.role !== "teacher") throw new Error("Unauthorized");
+
+    const { analyzePlagiarism } = await import("@/services/gemini/plagiarismService");
+
+    // 1. Fetch attempt and all submissions
+    const attempt = await prisma.evaluationAttempt.findUnique({
+        where: { id: attemptId },
+        include: { evaluation: true }
+    });
+    if (!attempt) throw new Error("Attempt not found");
+
+    const submissions = await prisma.evaluationSubmission.findMany({
+        where: { attemptId },
+        include: {
+            user: { select: { id: true, name: true } },
+            answersList: { select: { questionId: true, answer: true } }
+        }
+    });
+
+    if (submissions.length < 2) return [];
+
+    // 2. Format data for the service
+    const formattedSubmissions = submissions.map(s => ({
+        userId: s.user.id,
+        userName: s.user.name,
+        answers: s.answersList.map(a => ({ questionId: a.questionId, content: a.answer }))
+    }));
+
+    // 3. Run analysis
+    return await analyzePlagiarism(attempt.evaluation.title, formattedSubmissions);
+}
+
+export async function exportEvaluationAction(evaluationId: string) {
+    const session = await getSession();
+    if (!session || session.user.role !== "teacher" && session.user.role !== "admin") {
+        throw new Error("Unauthorized");
+    }
+
+    return await evaluationService.getFullEvaluationData(evaluationId, session.user.id);
+}
+
+export async function importEvaluationAction(data: any) {
+    const session = await getSession();
+    if (!session || session.user.role !== "teacher" && session.user.role !== "admin") {
+        throw new Error("Unauthorized");
+    }
+
+    // Basic validation
+    if (!data.title || !Array.isArray(data.questions)) {
+        throw new Error("Formato de evaluación inválido");
+    }
+
+    const evaluation = await evaluationService.createFullEvaluation(session.user.id, data);
+    revalidatePath("/dashboard/teacher/evaluations");
+    return evaluation;
 }
