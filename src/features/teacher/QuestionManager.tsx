@@ -36,6 +36,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createQuestionAction, deleteQuestionAction, updateQuestionAction, testQuestionWithAIAction, generateQuestionAction, generateAnswerAction } from "@/app/actions";
@@ -70,6 +71,12 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
     const [isAssistantOpen, setIsAssistantOpen] = useState(false);
     const [assistantPrompt, setAssistantPrompt] = useState("");
     const [questionSize, setQuestionSize] = useState<"short" | "medium" | "long">("medium");
+    const [questionOpenness, setQuestionOpenness] = useState<"concrete" | "balanced" | "open">("balanced");
+    const [includeCode, setIncludeCode] = useState(false);
+    const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "expert">("medium");
+    const [bloomTaxonomy, setBloomTaxonomy] = useState<"remember" | "understand" | "apply" | "analyze" | "evaluate" | "create">("apply");
+    const [includeBoilerplate, setIncludeBoilerplate] = useState(false);
+    const [includeTestCases, setIncludeTestCases] = useState(false);
 
     // AI UI State
     const [activeTestTab, setActiveTestTab] = useState("test");
@@ -109,7 +116,11 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                 ? `${styleModifier}${assistantPrompt ? ` Basado en: ${assistantPrompt}` : ""}`
                 : assistantPrompt;
 
-            const generatedText = await generateQuestionAction(evaluation.title, type, language, combinedPrompt, questionSize);
+            const generatedText = await generateQuestionAction(
+                evaluation.title, type, language, combinedPrompt,
+                questionSize, questionOpenness, includeCode,
+                difficulty, bloomTaxonomy, includeBoilerplate, includeTestCases
+            );
             setText(generatedText);
             setIsAssistantOpen(false);
             setAssistantPrompt("");
@@ -202,67 +213,137 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                                                 Asistente IA
                                             </Button>
                                         </DialogTrigger>
-                                        <DialogContent className="sm:max-w-[500px]">
-                                            <DialogHeader>
-                                                <DialogTitle className="flex items-center gap-2">
-                                                    <Sparkles className="h-5 w-5 text-amber-500" />
+                                        <DialogContent className="sm:max-w-[1000px] w-full">
+                                            <DialogHeader className="pb-3 border-b">
+                                                <DialogTitle className="flex items-center gap-2 text-base">
+                                                    <Sparkles className="h-4 w-4 text-amber-500" />
                                                     Asistente de Preguntas Gemini
                                                 </DialogTitle>
-                                                <DialogDescription>
-                                                    Define el enfoque de tu pregunta o usa una de las opciones rápidas.
+                                                <DialogDescription className="text-xs">
+                                                    Configura el enunciado y genera con IA.
                                                 </DialogDescription>
                                             </DialogHeader>
 
-                                            <div className="space-y-4 py-4">
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-bold uppercase text-muted-foreground/70">1. Define el Tema/Contexto (Opcional)</Label>
-                                                    <textarea
-                                                        className="w-full min-h-[80px] rounded-md border p-3 text-sm bg-muted/20 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                                                        placeholder="Ej: 'Bucles anidados', 'Gestión de memoria', 'Escenario de una tienda...'"
-                                                        value={assistantPrompt}
-                                                        onChange={(e) => setAssistantPrompt(e.target.value)}
-                                                    />
-                                                </div>
+                                            <div className="py-3 space-y-3">
 
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-bold uppercase text-muted-foreground/70">2. Tamaño de la Pregunta</Label>
-                                                    <div className="flex bg-muted/30 p-1 rounded-md gap-1">
-                                                        {(["short", "medium", "long"] as const).map((s) => (
-                                                            <Button
-                                                                key={s}
-                                                                type="button"
-                                                                variant={questionSize === s ? "secondary" : "ghost"}
-                                                                size="sm"
-                                                                className={`flex-1 h-7 text-[10px] capitalize font-bold ${questionSize === s ? "bg-white dark:bg-zinc-800 shadow-sm text-amber-600" : "text-muted-foreground"}`}
-                                                                onClick={() => setQuestionSize(s)}
-                                                            >
-                                                                {s === "short" ? "Corta" : s === "medium" ? "Media" : "Larga"}
-                                                            </Button>
-                                                        ))}
+                                                {/* === ROW 1: Prompt + Controls side by side === */}
+                                                <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
+
+                                                    {/* Prompt (left, wide) */}
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[10px] font-black uppercase text-amber-600 flex items-center gap-1">
+                                                            Tema / Contexto <span className="text-red-500">*</span>
+                                                            <span className="text-muted-foreground font-normal normal-case">(obligatorio)</span>
+                                                        </Label>
+                                                        <textarea
+                                                            required
+                                                            className="w-full h-[76px] rounded-md border-2 border-amber-500/30 p-2.5 text-sm bg-muted/20 focus:outline-none focus:border-amber-500 transition-all resize-none"
+                                                            placeholder="Ej: 'Bucles anidados en Python', 'Punteros en C++', 'Consultas SQL avanzadas'..."
+                                                            value={assistantPrompt}
+                                                            onChange={(e) => setAssistantPrompt(e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    {/* Extras switches (right, compact vertical) */}
+                                                    <div className="space-y-1 min-w-[160px]">
+                                                        <Label className="text-[9px] font-black uppercase text-muted-foreground/60">Extras</Label>
+                                                        <div className="space-y-1.5">
+                                                            {[
+                                                                { label: "Código en enunciado", value: includeCode, setter: setIncludeCode },
+                                                                { label: "Boilerplate inicial", value: includeBoilerplate, setter: setIncludeBoilerplate },
+                                                                { label: "Casos de prueba", value: includeTestCases, setter: setIncludeTestCases },
+                                                            ].map((item) => (
+                                                                <div key={item.label} className="flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-md border bg-muted/10 border-muted">
+                                                                    <span className="text-[9px] font-semibold">{item.label}</span>
+                                                                    <Switch checked={item.value} onCheckedChange={item.setter} className="data-[state=checked]:bg-amber-600 scale-75 shrink-0" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-bold uppercase text-muted-foreground/70">3. Elige un Estilo y Genera</Label>
-                                                    <div className="grid grid-cols-2 gap-2">
+                                                {/* === ROW 2: 4 control groups in a single row === */}
+                                                <div className="grid grid-cols-4 gap-3">
+
+                                                    {/* Tamaño */}
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[9px] font-black uppercase text-muted-foreground/60">Tamaño</Label>
+                                                        <div className="flex gap-1 p-0.5 bg-muted/30 rounded-md">
+                                                            {(["short", "medium", "long"] as const).map((s) => (
+                                                                <Button key={s} type="button" variant="ghost" size="sm"
+                                                                    className={`flex-1 h-7 text-[9px] font-bold px-1 ${questionSize === s ? "bg-white dark:bg-zinc-800 shadow text-amber-600" : "text-muted-foreground"}`}
+                                                                    onClick={() => setQuestionSize(s)}>
+                                                                    {s === "short" ? "📝 Corta" : s === "medium" ? "📄 Media" : "📋 Larga"}
+                                                                </Button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Apertura */}
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[9px] font-black uppercase text-muted-foreground/60">Apertura</Label>
+                                                        <div className="flex gap-1 p-0.5 bg-muted/30 rounded-md">
+                                                            {(["concrete", "balanced", "open"] as const).map((o) => (
+                                                                <Button key={o} type="button" variant="ghost" size="sm"
+                                                                    className={`flex-1 h-7 text-[9px] font-bold px-1 ${questionOpenness === o ? "bg-white dark:bg-zinc-800 shadow text-blue-600" : "text-muted-foreground"}`}
+                                                                    onClick={() => setQuestionOpenness(o)}>
+                                                                    {o === "concrete" ? "🎯 Concreta" : o === "balanced" ? "⚖️ Balance" : "🌐 Abierta"}
+                                                                </Button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Dificultad */}
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[9px] font-black uppercase text-muted-foreground/60">Dificultad</Label>
+                                                        <div className="flex gap-1 p-0.5 bg-muted/30 rounded-md">
+                                                            {(["easy", "medium", "hard", "expert"] as const).map((d) => (
+                                                                <Button key={d} type="button" variant="ghost" size="sm"
+                                                                    className={`flex-1 h-7 text-[9px] font-bold px-1 ${difficulty === d
+                                                                        ? d === "easy" ? "bg-green-100 dark:bg-green-900/40 text-green-700 shadow"
+                                                                            : d === "medium" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 shadow"
+                                                                                : d === "hard" ? "bg-orange-100 dark:bg-orange-900/40 text-orange-700 shadow"
+                                                                                    : "bg-red-100 dark:bg-red-900/40 text-red-700 shadow"
+                                                                        : "text-muted-foreground"}`}
+                                                                    onClick={() => setDifficulty(d)}>
+                                                                    {d === "easy" ? "🟢" : d === "medium" ? "🔵" : d === "hard" ? "🟠" : "🔴"} {d === "easy" ? "Básico" : d === "medium" ? "Medio" : d === "hard" ? "Alto" : "Experto"}
+                                                                </Button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Bloom */}
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[9px] font-black uppercase text-muted-foreground/60">Taxonomía de Bloom</Label>
+                                                        <div className="flex gap-0.5 p-0.5 bg-muted/30 rounded-md">
+                                                            {(["remember", "understand", "apply", "analyze", "evaluate", "create"] as const).map((b) => (
+                                                                <Button key={b} type="button" variant="ghost" size="sm"
+                                                                    className={`flex-1 h-7 text-[8px] font-bold px-0.5 ${bloomTaxonomy === b ? "bg-white dark:bg-zinc-800 shadow text-violet-600" : "text-muted-foreground"}`}
+                                                                    onClick={() => setBloomTaxonomy(b)}
+                                                                    title={b === "remember" ? "Recordar" : b === "understand" ? "Comprender" : b === "apply" ? "Aplicar" : b === "analyze" ? "Analizar" : b === "evaluate" ? "Evaluar" : "Crear"}>
+                                                                    {b === "remember" ? "Rec" : b === "understand" ? "Com" : b === "apply" ? "Apl" : b === "analyze" ? "Ana" : b === "evaluate" ? "Eva" : "Cre"}
+                                                                </Button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* === ROW 3: Quick Styles in a single horizontal row === */}
+                                                <div className="space-y-1">
+                                                    <Label className="text-[9px] font-black uppercase text-muted-foreground/60">Estilos Rápidos (genera directamente)</Label>
+                                                    <div className="flex gap-2">
                                                         {[
-                                                            { label: "Ejercicio Práctico", prompt: "Crea un ejercicio práctico desafiante." },
-                                                            { label: "Teoría Profunda", prompt: "Genera una pregunta teórica de análisis." },
-                                                            { label: "Depuración (Debug)", prompt: "Pregunta de identificación de errores." },
-                                                            { label: "Optimización", prompt: "Pregunta sobre mejora de eficiencia." },
-                                                            { label: "Casos de Uso", prompt: "Escenario del mundo real." },
-                                                            { label: "Opción Múltiple", prompt: "Pregunta para respuesta de opción múltiple (enunciado)." }
+                                                            { label: "⚡ Ejercicio Práctico", prompt: "Crea un ejercicio práctico y desafiante." },
+                                                            { label: "📚 Teoría Profunda", prompt: "Genera una pregunta teórica de análisis." },
+                                                            { label: "🐛 Debug", prompt: "Pregunta de identificación y corrección de errores." },
+                                                            { label: "🚀 Optimización", prompt: "Pregunta sobre mejora de eficiencia y rendimiento." },
+                                                            { label: "🌍 Caso de Uso", prompt: "Escenario del mundo real para analizar o resolver." },
                                                         ].map((preset) => (
-                                                            <Button
-                                                                key={preset.label}
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="h-9 justify-start text-[10px] px-3 gap-2 hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group"
-                                                                onClick={() => handleGenerateQuestion(preset.prompt)}
-                                                                disabled={isGeneratingQuestion}
-                                                            >
-                                                                <Zap className="h-3 w-3 text-amber-500 group-hover:scale-110 transition-transform" />
+                                                            <Button key={preset.label} type="button" variant="outline" size="sm"
+                                                                className={`flex-1 h-9 text-[10px] px-2 gap-1.5 border-muted hover:border-amber-500/60 hover:bg-amber-500/5 transition-all font-semibold ${!assistantPrompt ? "opacity-40" : ""}`}
+                                                                onClick={() => assistantPrompt && handleGenerateQuestion(preset.prompt)}
+                                                                disabled={isGeneratingQuestion || !assistantPrompt}>
+                                                                {isGeneratingQuestion ? <Loader2 className="h-3 w-3 animate-spin shrink-0" /> : null}
                                                                 {preset.label}
                                                             </Button>
                                                         ))}
@@ -270,19 +351,22 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                                                 </div>
                                             </div>
 
-                                            <DialogFooter>
+                                            <DialogFooter className="border-t pt-3 flex-row items-center gap-3">
+                                                {!assistantPrompt && (
+                                                    <p className="text-[10px] text-amber-600 font-bold flex-1">⚠️ Escribe un tema/contexto para desbloquear la generación.</p>
+                                                )}
                                                 <Button
                                                     type="button"
-                                                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                                                    className="bg-amber-600 hover:bg-amber-700 text-white font-black uppercase text-xs tracking-widest px-8 shadow-lg shadow-amber-600/20 disabled:opacity-40"
                                                     onClick={() => handleGenerateQuestion()}
-                                                    disabled={isGeneratingQuestion || (!assistantPrompt && !isGeneratingQuestion)}
+                                                    disabled={isGeneratingQuestion || !assistantPrompt}
                                                 >
                                                     {isGeneratingQuestion ? (
                                                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                                     ) : (
                                                         <Sparkles className="h-4 w-4 mr-2" />
                                                     )}
-                                                    {isGeneratingQuestion ? "Generando..." : "Generar Pregunta Personalizada"}
+                                                    {isGeneratingQuestion ? "Generando..." : "Generar Pregunta"}
                                                 </Button>
                                             </DialogFooter>
                                         </DialogContent>
@@ -343,10 +427,10 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                                     />
                                 </div>
                             </div>
-                        </div>
+                        </div >
 
                         {/* Right Column: AI Test Area */}
-                        <div className="flex flex-col gap-3 border p-4 rounded-lg bg-card shadow-sm">
+                        < div className="flex flex-col gap-3 border p-4 rounded-lg bg-card shadow-sm" >
                             <div className="flex items-center justify-between border-b pb-2 mb-1">
                                 <h3 className="font-bold text-sm flex items-center gap-2 uppercase tracking-tight text-muted-foreground">
                                     <Sparkles className="h-4 w-4 text-amber-500" /> Prueba tu Pregunta con IA
@@ -487,12 +571,12 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                                     )}
                                 </TabsContent>
                             </Tabs>
-                        </div>
-                    </div>
+                        </div >
+                    </div >
 
                     {/* Bottom Save button removed as it is now at the top */}
-                </form>
-            </div>
+                </form >
+            </div >
         );
     }
 

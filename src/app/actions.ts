@@ -1180,14 +1180,26 @@ export async function testQuestionWithAIAction(questionText: string, type: strin
     return aiResult;
 }
 
-export async function generateQuestionAction(topic: string, type: string, language?: string, customPrompt?: string, size: "short" | "medium" | "long" = "medium") {
+export async function generateQuestionAction(
+    topic: string,
+    type: string,
+    language?: string,
+    customPrompt?: string,
+    size: "short" | "medium" | "long" = "medium",
+    openness: "concrete" | "balanced" | "open" = "balanced",
+    includeCode: boolean = false,
+    difficulty: "easy" | "medium" | "hard" | "expert" = "medium",
+    bloomTaxonomy: "remember" | "understand" | "apply" | "analyze" | "evaluate" | "create" = "apply",
+    includeBoilerplate: boolean = false,
+    includeTestCases: boolean = false
+) {
     const session = await getSession();
     if (!session || (session.user.role !== "teacher" && session.user.role !== "admin")) {
         throw new Error("Unauthorized");
     }
 
     const { generateQuestion } = await import("@/services/gemini/questionGenerationService");
-    return await generateQuestion(topic, type, language, customPrompt, size);
+    return await generateQuestion(topic, type, language, customPrompt, size, openness, includeCode, difficulty, bloomTaxonomy, includeBoilerplate, includeTestCases);
 }
 
 export async function generateAnswerAction(questionText: string, type: string, language?: string) {
