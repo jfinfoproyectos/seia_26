@@ -30,6 +30,7 @@ export function ProfileCompletionCheck() {
     const { data: session, refetch } = authClient.useSession();
 
     useEffect(() => {
+        if (!session?.user) return; // Wait until session is loaded
         checkStatus();
     }, [session]);
 

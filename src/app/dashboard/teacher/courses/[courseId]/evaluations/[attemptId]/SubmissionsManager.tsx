@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { formatDateTime } from "@/lib/dateUtils";
-import { Trash2, AlertCircle, ArrowLeft, Eye, ShieldAlert, FileText } from "lucide-react";
+import { Trash2, AlertCircle, ArrowLeft, Eye, ShieldAlert, FileText, MonitorPlay } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,15 +76,23 @@ export function SubmissionsManager({
                 </div>
                 <div className="flex flex-wrap items-center gap-2 ml-auto">
                     {isMounted && submissions.length > 0 && (
-                        <DownloadReportButton
-                            appTitle={appTitle}
-                            courseName={courseName}
-                            teacherName={teacherName}
-                            evaluationTitle={attempt.evaluation.title}
-                            startTime={attempt.startTime}
-                            endTime={attempt.endTime}
-                            submissions={submissions}
-                        />
+                        <>
+                            <Link href={`/dashboard/teacher/courses/${courseId}/evaluations/${attempt.id}/live`}>
+                                <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-sm">
+                                    <MonitorPlay className="w-4 h-4" />
+                                    Pantalla en Vivo
+                                </Button>
+                            </Link>
+                            <DownloadReportButton
+                                appTitle={appTitle}
+                                courseName={courseName}
+                                teacherName={teacherName}
+                                evaluationTitle={attempt.evaluation.title}
+                                startTime={attempt.startTime}
+                                endTime={attempt.endTime}
+                                submissions={submissions}
+                            />
+                        </>
                     )}
 
                     {submissions.filter(s => s.submittedAt).length > 0 && (

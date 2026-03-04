@@ -676,7 +676,7 @@ export function TakeEvaluationLayout({
                         <TooltipTrigger asChild>
                             <div className="flex items-center gap-1 px-3 h-8 bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-lg border border-blue-500/20 font-medium cursor-default">
                                 <span className="text-[10px] uppercase font-bold mr-1">Acumulada:</span>
-                                <span className="text-xs font-black">{accumulatedScore.toFixed(1)}</span>
+                                <span className="text-xs font-black">{accumulatedScore.toFixed(2)}</span>
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>Nota de las respuestas (sin penalidades)</TooltipContent>
@@ -693,10 +693,10 @@ export function TakeEvaluationLayout({
                                     <div className="flex items-center gap-1.5 px-4 h-8 bg-emerald-600 text-white rounded-lg border border-emerald-500/30 font-bold cursor-default shadow-md hover:scale-105 transition-transform">
                                         <Sparkles className="w-3.5 h-3.5 fill-white" />
                                         <span className="text-[10px] uppercase font-black mr-1">Definitiva:</span>
-                                        <span className="text-sm font-black">{definitiva.toFixed(1)}</span>
+                                        <span className="text-sm font-black">{definitiva.toFixed(2)}</span>
                                     </div>
                                 </TooltipTrigger>
-                                <TooltipContent>Nota Final (con penalidades): {definitiva.toFixed(1)} / 5.0</TooltipContent>
+                                <TooltipContent>Nota Final (con penalidades): {definitiva.toFixed(2)} / 5.0</TooltipContent>
                             </Tooltip>
                         );
                     })()}
@@ -714,7 +714,7 @@ export function TakeEvaluationLayout({
                                         const totalDeduction = expulsionsCount * penalty;
                                         return (
                                             <span className="ml-1 pl-1.5 border-l border-white/30 text-xs font-black">
-                                                −{totalDeduction.toFixed(1)} pts
+                                                −{totalDeduction.toFixed(2)} pts
                                             </span>
                                         );
                                     }
@@ -724,7 +724,7 @@ export function TakeEvaluationLayout({
                         </TooltipTrigger>
                         <TooltipContent>
                             {expulsionsCount > 0
-                                ? `Has salido de la ventana ${expulsionsCount} veces. Penalidad total: −${((expulsionsCount || 0) * (attempt.evaluation.expulsionPenalty || 0)).toFixed(1)} pts.`
+                                ? `Has salido de la ventana ${expulsionsCount} veces. Penalidad total: −${((expulsionsCount || 0) * (attempt.evaluation.expulsionPenalty || 0)).toFixed(2)} pts.`
                                 : "Número de veces que has salido de la ventana de la evaluación."}
                         </TooltipContent>
                     </Tooltip>
