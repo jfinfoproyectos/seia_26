@@ -85,7 +85,7 @@ export function EvaluationAssignmentManager({
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
                     <h3 className="text-lg font-medium">Evaluaciones Asignadas</h3>
                     <p className="text-sm text-muted-foreground">
@@ -95,7 +95,7 @@ export function EvaluationAssignmentManager({
 
                 <Dialog open={isAssigning} onOpenChange={setIsAssigning}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="w-full sm:w-auto">
                             <Plus className="mr-2 h-4 w-4" /> Asignar Evaluación
                         </Button>
                     </DialogTrigger>
@@ -155,8 +155,8 @@ export function EvaluationAssignmentManager({
                 </Dialog>
             </div>
 
-            <div className="rounded-md border bg-card">
-                <Table>
+            <div className="w-full overflow-x-auto rounded-md border bg-card">
+                <Table className="min-w-[640px]">
                     <TableHeader>
                         <TableRow>
                             <TableHead>Evaluación</TableHead>

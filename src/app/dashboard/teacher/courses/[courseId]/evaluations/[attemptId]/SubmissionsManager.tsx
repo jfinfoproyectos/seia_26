@@ -62,19 +62,19 @@ export function SubmissionsManager({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4 border-b pb-4">
+            <div className="flex flex-wrap items-start gap-3 border-b pb-4">
                 <Link href={`/dashboard/teacher/courses/${courseId}`}>
                     <Button variant="outline" size="icon">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                     <h2 className="text-xl font-semibold">{attempt.evaluation.title}</h2>
                     <p className="text-sm text-muted-foreground">
                         {formatDateTime(attempt.startTime)} - {formatDateTime(attempt.endTime)}
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 ml-auto">
                     {isMounted && submissions.length > 0 && (
                         <DownloadReportButton
                             appTitle={appTitle}
@@ -98,8 +98,8 @@ export function SubmissionsManager({
                 </div>
             </div>
 
-            <div className="rounded-md border bg-card">
-                <Table>
+            <div className="w-full overflow-x-auto rounded-md border bg-card">
+                <Table className="min-w-[780px]">
                     <TableHeader>
                         <TableRow>
                             <TableHead>Estudiante</TableHead>

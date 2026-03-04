@@ -10,6 +10,7 @@ import { formatDateTime } from '@/lib/dateUtils';
 import { FeedbackViewer } from "@/features/student/FeedbackViewer";
 import { DownloadSubmissionPDFWrapper as DownloadSubmissionPDF } from "@/features/teacher/DownloadSubmissionPDFWrapper";
 import prisma from "@/lib/prisma";
+import { CodeAnswerViewerWrapper } from "@/features/teacher/CodeAnswerViewerWrapper";
 
 export async function generateMetadata(): Promise<Metadata> {
     const settings = await prisma.systemSettings.findUnique({
@@ -160,9 +161,16 @@ export default async function SubmissionDetailsPage(
                                             <>
                                                 <div>
                                                     <span className="text-sm font-semibold text-muted-foreground mb-3 block">Respuesta del estudiante:</span>
-                                                    <div className="bg-background border p-4 rounded-md text-sm">
-                                                        <FeedbackViewer feedback={answer.answer} />
-                                                    </div>
+                                                    {question.type === 'Code' ? (
+                                                        <CodeAnswerViewerWrapper
+                                                            code={answer.answer}
+                                                            language={question.language}
+                                                        />
+                                                    ) : (
+                                                        <div className="bg-background border p-4 rounded-md text-sm">
+                                                            <FeedbackViewer feedback={answer.answer} />
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 {answer.aiFeedback && (
                                                     <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md border border-blue-100 dark:border-blue-900 mt-4">
