@@ -42,6 +42,7 @@ export default async function LiveEvaluationPage(
                 courseId={courseId}
                 evaluationTitle={attempt.evaluation.title}
                 courseTitle={course?.title || "Curso"}
+                endTime={attempt.endTime}
             />
         </div>
     );

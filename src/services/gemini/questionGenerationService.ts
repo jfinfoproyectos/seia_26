@@ -137,7 +137,7 @@ export async function generateSampleAnswer(
         **INSTRUCCIONES**:
         1. Genera la respuesta ideal que un profesor esperaría recibir.
         2. Para preguntas de código, devuelve únicamente el código, sin explicaciones adicionales ni bloques de markdown (el IDE ya formatea).
-        3. Para preguntas de texto, sé preciso y usa un tono académico.
+        3. Para preguntas de texto, sé preciso y usa un tono académico. NO uses formato markdown (asteriscos, negritas, estilos) porque la respuesta se mostrará en un textarea de texto plano.
         4. La respuesta debe ser directamente utilizable como referencia.
 
         **SALIDA REQUERIDA (Formato JSON estricto)**:

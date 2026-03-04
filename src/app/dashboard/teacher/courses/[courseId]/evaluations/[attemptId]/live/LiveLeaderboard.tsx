@@ -26,13 +26,15 @@ interface LiveLeaderboardProps {
     courseId: string;
     evaluationTitle: string;
     courseTitle: string;
+    endTime: Date;
 }
 
-export function LiveLeaderboard({ attemptId, courseId, evaluationTitle, courseTitle }: LiveLeaderboardProps) {
+export function LiveLeaderboard({ attemptId, courseId, evaluationTitle, courseTitle, endTime }: LiveLeaderboardProps) {
     const [leaderboard, setLeaderboard] = useState<LiveLeaderboardData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
     const [error, setError] = useState<string | null>(null);
+    const [timeLeft, setTimeLeft] = useState<string>("");
 
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isScreensaverActive, setIsScreensaverActive] = useState(false);
@@ -128,6 +130,34 @@ export function LiveLeaderboard({ attemptId, courseId, evaluationTitle, courseTi
         return () => clearInterval(intervalId);
     }, [fetchData]);
 
+    // Timer logic
+    useEffect(() => {
+        const updateTimer = () => {
+            const now = new Date();
+            const end = new Date(endTime);
+            const diff = end.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeLeft("Tiempo terminado");
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            let timeString = "";
+            if (hours > 0) timeString += `${hours.toString().padStart(2, '0')}:`;
+            timeString += `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            setTimeLeft(timeString);
+        };
+
+        updateTimer();
+        const timerInterval = setInterval(updateTimer, 1000);
+        return () => clearInterval(timerInterval);
+    }, [endTime]);
+
     const topStudent = leaderboard.length > 0 ? leaderboard[0] : null;
     const remainingStudents = leaderboard.length > 1 ? leaderboard.slice(1) : [];
 
@@ -168,6 +198,14 @@ export function LiveLeaderboard({ attemptId, courseId, evaluationTitle, courseTi
                     >
                         {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
                     </Button>
+                    <div className="flex items-center space-x-4 text-sm border-l pl-4 border-slate-200 dark:border-slate-800">
+                        <div className="flex flex-col items-end">
+                            <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Tiempo Restante</span>
+                            <span className={cn("font-mono font-bold text-lg leading-none", timeLeft === "Tiempo terminado" ? "text-destructive" : "text-amber-500")} suppressHydrationWarning>
+                                {timeLeft}
+                            </span>
+                        </div>
+                    </div>
                     <div className="flex items-center space-x-2 text-sm border-l pl-4 border-slate-200 dark:border-slate-800">
                         {isLoading ? (
                             <Loader2 className="w-4 h-4 animate-spin text-primary" />

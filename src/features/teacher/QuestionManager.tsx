@@ -175,7 +175,7 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
         <div className="space-y-4">
             {/* --- Form Sheet for Creating/Editing --- */}
             <Sheet open={isFormSheetOpen} onOpenChange={setIsFormSheetOpen}>
-                <SheetContent side="right" className="w-full sm:max-w-[95vw] p-6 flex flex-col h-full bg-background [&>button]:hidden">
+                <SheetContent side="right" className="w-full sm:max-w-full p-6 flex flex-col h-full bg-background [&>button]:hidden">
                     <SheetHeader className="mb-4 flex-shrink-0">
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-1 text-left">
@@ -410,25 +410,38 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                                     </TabsList>
 
                                     <TabsContent value="test" className="flex-1 flex flex-col overflow-hidden m-0 pt-2 pb-0">
-                                        {type === "Text" ? (
-                                            <textarea
-                                                className="flex-1 w-full rounded-md border bg-muted/10 p-4 text-sm focus:outline-none resize-none"
-                                                placeholder="Escribe una respuesta para validar..."
-                                                value={testAnswer}
-                                                onChange={(e) => setTestAnswer(e.target.value)}
-                                            />
-                                        ) : (
-                                            <div className="flex-1 border rounded-md overflow-hidden bg-background">
-                                                <Editor
-                                                    height="100%"
-                                                    language={language === "arduino" ? "cpp" : (language || "javascript")}
-                                                    theme={mode === "dark" ? "vs-dark" : "light"}
+                                        <div className="flex flex-col gap-2 flex-1 overflow-hidden">
+                                            {type === "Text" ? (
+                                                <textarea
+                                                    className="flex-1 w-full rounded-md border bg-muted/10 p-4 text-sm focus:outline-none resize-none"
+                                                    placeholder="Escribe una respuesta para validar..."
                                                     value={testAnswer}
-                                                    onChange={(val) => setTestAnswer(val || "")}
-                                                    options={{ minimap: { enabled: false }, fontSize: 13, wordWrap: "on" }}
+                                                    onChange={(e) => setTestAnswer(e.target.value)}
                                                 />
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <div className="flex-1 border rounded-md overflow-hidden bg-background">
+                                                    <Editor
+                                                        height="100%"
+                                                        language={language === "arduino" ? "cpp" : (language || "javascript")}
+                                                        theme={mode === "dark" ? "vs-dark" : "light"}
+                                                        value={testAnswer}
+                                                        onChange={(val) => setTestAnswer(val || "")}
+                                                        options={{ minimap: { enabled: false }, fontSize: 13, wordWrap: "on" }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 text-[10px] font-bold uppercase tracking-wider"
+                                                onClick={handleGenerateAnswer}
+                                                disabled={isGeneratingAnswer || !text}
+                                            >
+                                                {isGeneratingAnswer ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3 text-amber-500" />}
+                                                {isGeneratingAnswer ? "Generando..." : "Sugerir Respuesta Ideal con Gemini"}
+                                            </Button>
+                                        </div>
                                     </TabsContent>
 
                                     <TabsContent value="result" className="flex-1 flex flex-col overflow-y-auto m-0 pt-2 pr-1">
@@ -442,7 +455,6 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                                                     <span className="text-xl font-black text-primary">{aiTestResult.scoreContribution.toFixed(1)}/5.0</span>
                                                 </div>
                                                 <p className="text-xs leading-relaxed text-muted-foreground italic">"{aiTestResult.feedback}"</p>
-                                                <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold mt-2" onClick={handleGenerateAnswer}>Sugerir Respuesta Ideal</Button>
                                             </div>
                                         ) : (
                                             <div className="flex-1 flex flex-col items-center justify-center opacity-40 border border-dashed rounded-lg">
