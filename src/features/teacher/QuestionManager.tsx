@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { format } from "date-fns";
-import { Plus, Trash2, Edit, AlertCircle, Type, Code2, ArrowLeft, Loader2, Zap, MessageSquare, Sparkles, CheckCircle2, XCircle, Info } from "lucide-react";
+import { Plus, Trash2, Edit, AlertCircle, Type, Code2, ArrowLeft, Loader2, Zap, MessageSquare, Sparkles, CheckCircle2, XCircle, Info, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,14 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet";
 import {
     Tabs,
     TabsContent,
@@ -51,7 +59,7 @@ import Editor from "@monaco-editor/react";
 
 export function QuestionManager({ evaluation }: { evaluation: any }) {
     const [isCreating, setIsCreating] = useState(false);
-
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     // Question Form State
     const [type, setType] = useState("Text"); // "Text" | "Code"
     const [language, setLanguage] = useState("javascript");
@@ -83,7 +91,7 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
 
     // Edit mode state
     const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
-
+    const [editingQuestionIndex, setEditingQuestionIndex] = useState<number | null>(null);
     const { resolvedTheme } = useTheme();
     const mode = resolvedTheme === "dark" ? "dark" : resolvedTheme === "light" ? "light" : "auto";
     const formRef = useRef<HTMLFormElement>(null);
@@ -149,7 +157,12 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex flex-col gap-1">
-                        <h2 className="text-2xl font-bold tracking-tight">{editingQuestionId ? "Editar Pregunta" : "Nueva Pregunta"}</h2>
+                        <h2 className="text-2xl font-bold tracking-tight">
+                            {editingQuestionId
+                                ? `Editar Pregunta ${editingQuestionIndex !== null ? editingQuestionIndex + 1 : ''}`
+                                : "Nueva Pregunta"
+                            }
+                        </h2>
                         <p className="text-muted-foreground">Configura el enunciado y valida la evaluación con IA.</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -178,6 +191,7 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                         }
                         setIsCreating(false);
                         setEditingQuestionId(null);
+                        setEditingQuestionIndex(null);
                         setText("**Enunciado de la Pregunta**\n\nEscribe aquí...");
                         setCodeValue("// Escribe el código aquí...");
                         setTestAnswer("");
@@ -592,18 +606,81 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                     <h2 className="text-xl font-bold tracking-tight">Preguntas de: {evaluation.title}</h2>
                 </div>
 
-                <Button onClick={() => {
-                    setIsCreating(true);
-                    setEditingQuestionId(null);
-                    setType("Text");
-                    setLanguage("javascript");
-                    setText("**Enunciado de la Pregunta**\n\nEscribe aquí...");
-                    setCodeValue("// Escribe el código aquí...");
-                    setTestAnswer("");
-                    setAiTestResult(null);
-                }}>
-                    <Plus className="mr-2 h-4 w-4" /> Nueva Pregunta
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button onClick={() => {
+                        setIsCreating(true);
+                        setEditingQuestionId(null);
+                        setEditingQuestionIndex(null);
+                        setType("Text");
+                        setLanguage("javascript");
+                        setText("**Enunciado de la Pregunta**\n\nEscribe aquí...");
+                        setCodeValue("// Escribe el código aquí...");
+                        setTestAnswer("");
+                        setAiTestResult(null);
+                    }}>
+                        <Plus className="mr-2 h-4 w-4" /> Nueva Pregunta
+                    </Button>
+                    <Sheet open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="outline">
+                                <Eye className="mr-2 h-4 w-4" /> Vista Previa
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent className="w-full sm:max-w-4xl p-6 flex flex-col h-full overflow-hidden">
+                            <SheetHeader className="mb-4">
+                                <SheetTitle>Vista Previa de Preguntas</SheetTitle>
+                                <SheetDescription>Repasa y lee todas las preguntas de la evaluación como las vería el estudiante.</SheetDescription>
+                            </SheetHeader>
+                            <div className="flex-1 overflow-y-auto pr-2 space-y-6" data-color-mode={mode}>
+                                {evaluation.questions.length === 0 ? (
+                                    <div className="text-center p-8 text-muted-foreground">
+                                        No hay preguntas para previsualizar.
+                                    </div>
+                                ) : (
+                                    evaluation.questions.map((q: any, i: number) => (
+                                        <div key={q.id} className="border p-5 rounded-lg bg-card space-y-4 shadow-sm relative group">
+                                            <div className="flex justify-between items-center border-b pb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <h4 className="font-bold text-lg text-primary">Pregunta {i + 1}</h4>
+                                                    {q.type === "Text" ? (
+                                                        <span className="flex items-center gap-1 text-blue-500 bg-blue-500/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase">
+                                                            <Type className="h-3 w-3" /> Texto
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1 text-orange-500 bg-orange-500/10 px-2 py-1 rounded-md text-[10px] font-bold uppercase">
+                                                            <Code2 className="h-3 w-3" /> Código ({q.language})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setIsPreviewOpen(false);
+                                                        setEditingQuestionId(q.id);
+                                                        setEditingQuestionIndex(i);
+                                                        setType(q.type);
+                                                        setLanguage(q.language || "javascript");
+                                                        setText(q.text);
+                                                        setIsCreating(true);
+                                                        setTestAnswer("");
+                                                        setAiTestResult(null);
+                                                        setCodeValue("// Escribe el código aquí...");
+                                                    }}
+                                                >
+                                                    <Edit className="h-4 w-4 mr-2" /> Editar
+                                                </Button>
+                                            </div>
+                                            <div className="p-4 bg-background/80 rounded-md border min-h-[100px]">
+                                                <MDEditor.Markdown source={q.text} style={{ backgroundColor: 'transparent' }} />
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
             </div>
 
             <div className="w-full overflow-x-auto rounded-md border bg-card">
@@ -650,6 +727,7 @@ export function QuestionManager({ evaluation }: { evaluation: any }) {
                                             title="Editar"
                                             onClick={() => {
                                                 setEditingQuestionId(question.id);
+                                                setEditingQuestionIndex(index);
                                                 setType(question.type);
                                                 setLanguage(question.language || "javascript");
                                                 setText(question.text);

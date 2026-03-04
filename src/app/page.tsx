@@ -13,7 +13,7 @@ export default async function LandingPage() {
     select: { appTitle: true }
   });
 
-  const appTitle = settings?.appTitle || "SmartClass";
+  const appTitle = settings?.appTitle || "SEIA";
 
   return (
     <main className="bg-background text-foreground">

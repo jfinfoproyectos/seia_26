@@ -13,7 +13,7 @@ export async function generateMetadata() {
     select: { appTitle: true }
   });
 
-  const title = settings?.appTitle || "SmartClass";
+  const title = settings?.appTitle || "SEIA";
 
   return {
     title: title,
