@@ -6,6 +6,7 @@ import { es } from "date-fns/locale";
 import MDEditor from "@uiw/react-md-editor";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Editor, { loader } from "@monaco-editor/react";
 
@@ -61,6 +62,7 @@ export function TakeEvaluationLayout({
     // Modal states
     const [alertMessage, setAlertMessage] = useState<{ title: string; desc: string } | null>(null);
     const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+    const [finishConfirmText, setFinishConfirmText] = useState("");
 
     // Security/Anti-cheat states
     const [hasStarted, setHasStarted] = useState(false);
@@ -821,7 +823,10 @@ export function TakeEvaluationLayout({
                             size="sm"
                             variant="default"
                             className="h-7 text-xs px-3 bg-primary hover:bg-primary/90"
-                            onClick={() => setShowFinishConfirm(true)}
+                            onClick={() => {
+                                setFinishConfirmText("");
+                                setShowFinishConfirm(true);
+                            }}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? "Enviando..." : "Terminar Evaluación"}
@@ -1194,13 +1199,30 @@ export function TakeEvaluationLayout({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Terminar Evaluación?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            ¿Estás seguro de que deseas enviar la evaluación? No podrás cambiar tus respuestas después de confirmarlo.
+                        <AlertDialogDescription className="flex flex-col gap-2">
+                            <span>¿Estás seguro de que deseas enviar la evaluación? No podrás cambiar tus respuestas después de confirmarlo.</span>
+                            <span className="mt-2 text-foreground font-medium">Por favor, escribe la palabra <strong>ENVIAR</strong> en mayúsculas para confirmar:</span>
+                            <Input
+                                value={finishConfirmText}
+                                onChange={(e) => setFinishConfirmText(e.target.value)}
+                                placeholder="Escribe ENVIAR"
+                                autoComplete="off"
+                            />
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleFinish} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                        <AlertDialogCancel onClick={() => setFinishConfirmText("")}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                if (finishConfirmText !== "ENVIAR") {
+                                    e.preventDefault();
+                                    return;
+                                }
+                                handleFinish();
+                            }}
+                            disabled={finishConfirmText !== "ENVIAR"}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
                             Enviar y Terminar
                         </AlertDialogAction>
                     </AlertDialogFooter>
