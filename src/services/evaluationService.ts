@@ -265,7 +265,13 @@ export const evaluationService = {
                     select: {
                         id: true,
                         name: true,
-                        email: true
+                        email: true,
+                        profile: {
+                            select: {
+                                nombres: true,
+                                apellido: true,
+                            }
+                        }
                     }
                 },
                 answersList: {

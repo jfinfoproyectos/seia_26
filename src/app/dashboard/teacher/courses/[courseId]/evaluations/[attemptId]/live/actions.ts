@@ -36,10 +36,21 @@ export async function getLiveLeaderboardData(attemptId: string) {
         const answersCount = sub._count?.answersList || 0;
         const progress = totalQuestions > 0 ? (answersCount / totalQuestions) * 100 : 0;
 
+        let formattedName = sub.user.name;
+        // @ts-ignore - profile relation might not be mapped in all return types but is fetched by getSubmissionsByAttempt
+        const profile = sub.user.profile;
+        if (profile?.nombres || profile?.apellido) {
+            const firstName = profile.nombres?.trim().split(' ')[0] || '';
+            const firstLastName = profile.apellido?.trim().split(' ')[0] || '';
+            if (firstName || firstLastName) {
+                formattedName = `${firstName} ${firstLastName}`.trim();
+            }
+        }
+
         return {
             id: sub.id,
             userId: sub.user.id,
-            name: sub.user.name,
+            name: formattedName,
             score: Number(sub.score || 0),
             answersCount,
             totalQuestions,
